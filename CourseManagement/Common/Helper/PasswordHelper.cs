@@ -5,6 +5,13 @@ namespace CourseManagement.Common.Helper
 {
     public static class PasswordHelper
     {
+
+        public static bool IsPasswordValid(this string password)
+        {
+            // todo: use regular expression to validate password
+            return true;
+        }
+
         public static string HashPassword(string password)
         {
             using (var sha256Hash = SHA256.Create())
