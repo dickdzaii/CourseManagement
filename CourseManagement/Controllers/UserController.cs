@@ -2,7 +2,6 @@
 using CourseManagement.Models;
 using CourseManagement.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -78,9 +77,9 @@ namespace CourseManagement.Controllers
 
             var user = new User()
             {
-                Email = model.Email,
+                Email = model.Email.Trim(),
                 Password = PasswordHelper.HashPassword(model.Password),
-                UserName = model.Username
+                UserName = model.Username.Trim()
             };
             try
             {
@@ -89,9 +88,9 @@ namespace CourseManagement.Controllers
 
                 return Ok(new Response { Status = "Success", Message = "Created successfully!" });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User creation failed! Please check user details and try again." });
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = $"User creation failed! Please check user details and try again. Error: { ex.Message }" });
             }
         }
 
@@ -118,7 +117,7 @@ namespace CourseManagement.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User creation failed! Please check user details and try again." });
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = $"User creation failed! Please check user details and try again. Error { ex.Message }" });
             }
         }
 
@@ -135,7 +134,7 @@ namespace CourseManagement.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User edition failed! Please check user details and try again." });
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = $"User edition failed! Please check user details and try again. Error { ex.Message }" });
             }
         }
     }
