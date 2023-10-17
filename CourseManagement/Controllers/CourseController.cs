@@ -5,6 +5,7 @@ using System.Linq.Dynamic.Core;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using CourseManagement.Constants;
+using Microsoft.AspNetCore.Http;
 
 namespace CourseManagement.Controllers
 {
@@ -19,7 +20,7 @@ namespace CourseManagement.Controllers
             this._dataContext = _dataContext;
         }
 
-        [HttpGet()]
+        [HttpGet]
         public IActionResult GetCourses(string? search = "",
             float? minFee = null,
             float? maxFee = null,
@@ -38,7 +39,7 @@ namespace CourseManagement.Controllers
 
                 if (!string.IsNullOrWhiteSpace(orderByColumn))
                 {
-                    courses = courses.OrderBy($"{orderByColumn} {( isAscending.Value == false ? $"{ OrderByState.Descending }" : $"{ OrderByState.Ascending }" )}");
+                    courses = courses.OrderBy($"{orderByColumn} {(isAscending.Value == false ? $"{OrderByState.Descending}" : $"{OrderByState.Ascending}")}");
 
                 }
 
@@ -61,7 +62,7 @@ namespace CourseManagement.Controllers
             return course != null ? Ok(course) : NotFound(new Response { Status = "Error", Message = "Could not find the course." });
         }
 
-        [HttpPost()]
+        [HttpPost]
         public IActionResult CreateCourse(Course course)
         {
             try
@@ -97,17 +98,137 @@ namespace CourseManagement.Controllers
                 _dataContext.ValidateUpsert(course, currentCourse);
                 course.CourseName = course.CourseName.Trim();
                 _dataContext.Courses.Update(course);
+                _dataContext.SaveChanges();
 
                 return Ok(course);
             }
             catch (ValidationException ex)
             {
-                return StatusCode(StatusCodes.Status400BadRequest, new Response { Status = "Error", Message = $"{ex.Message}" });
+                return StatusCode(StatusCodes.Status400BadRequest, new Response
+                {
+                    Status = "Error",
+                    Message = $"{ex.Message}"
+                });
 
             }
             catch (Exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "There was an error when modifying a course." });
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response
+                {
+                    Status = "Error",
+                    Message = "There was an error when modifying a course."
+                });
+            }
+        }
+
+        [HttpPost]
+        [Route("upload-image/{courseId}")]
+        public async Task<IActionResult> UploadCourseImage(IFormFile courseImage, int courseId)
+        {
+            try
+            {
+                var course = _dataContext.Courses.FirstOrDefault(c => c.CourseId == courseId);
+                if (course is null)
+                {
+                    return NotFound(new Response
+                    {
+                        Status = "Error",
+                        Message = $"Course with id {courseId} is not existed."
+                    });
+                }
+
+                if (courseImage.Length > 0)
+                {
+                    var filePath = Path.GetTempFileName();
+                    using (var stream = System.IO.File.Create(filePath))
+                    {
+                        await courseImage.CopyToAsync(stream);
+                    }
+
+                    course.Image = courseImage.FileName;
+                    _dataContext.Courses.Update(course);
+                    _dataContext.SaveChanges();
+
+                    return Ok(new Response
+                    {
+                        Status = "Success",
+                        Message = $"Uploaded image for course {course.CourseName}."
+                    });
+                }
+
+                return BadRequest(new Response
+                {
+                    Status = "Success",
+                    Message = $"Invalid uploaded file."
+                });
+
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response
+                {
+                    Status = "Error",
+                    Message = "There was an error when modifying a course."
+                });
+            }
+        }
+
+        [HttpPost("upload-material/{courseId}")]
+        public async Task<IActionResult> UploadCourseMaterial(IEnumerable<IFormFile> files, int courseId)
+        {
+            try
+            {
+                var course = _dataContext.Courses.FirstOrDefault(c => c.CourseId == courseId);
+                if (course is null)
+                {
+                    return NotFound(new Response
+                    {
+                        Status = "Error",
+                        Message = $"Course with id {courseId} is not existed."
+                    });
+                }
+
+                foreach (var file in files)
+                {
+                    if (file.Length > 0)
+                    {
+                        var filePath = Path.GetTempFileName();
+                        using (var stream = System.IO.File.Create(filePath))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+
+                        var material = new CourseMaterial
+                        {
+                            CourseId = courseId,
+                            FilePath = file.FileName,
+                            IsActive = true,
+                            MaterialTitle = "",
+                            FileOrder = 1,
+                            ContentType = file.ContentType,
+                        };
+
+                        _dataContext.CourseMaterials.Add(material);
+
+
+                    }
+                }
+
+                _dataContext.SaveChanges();
+
+                return Ok(new Response
+                {
+                    Status = "Success",
+                    Message = $"Uploaded marterials for course {course.CourseName}."
+                });
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response
+                {
+                    Status = "Error",
+                    Message = "There was an error when adding course materials."
+                });
             }
         }
 
@@ -120,7 +241,9 @@ namespace CourseManagement.Controllers
                 var course = _dataContext.Courses.FirstOrDefault(c => c.CourseId == courseId);
                 if (course != null)
                 {
+                    _dataContext.ValidateDelete(course);
                     _dataContext.Courses.Remove(course);
+
                     _dataContext.SaveChanges();
                 }
 
@@ -128,21 +251,68 @@ namespace CourseManagement.Controllers
             }
             catch (Exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "There was an error when deleting a course." });
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response
+                {
+                    Status = "Error",
+                    Message = "There was an error when deleting course."
+                });
             }
         }
 
         [HttpPost]
         [Route("enroll/{courseId}")]
-        public IActionResult EnrollmentCourse([FromBody] int userId, int courseId)
+        public IActionResult EnrollCourse([FromBody] int userId, int courseId)
         {
             try
             {
-                return Ok();
+                var user = _dataContext.Users.FirstOrDefault(c => c.UserId == userId);
+                var course = _dataContext.Courses.FirstOrDefault(c => c.CourseId == courseId);
+                if (user is null)
+                {
+                    return NotFound(new Response
+                    {
+                        Status = "Error",
+                        Message = "User not found."
+                    });
+                }
+
+                if (course is null)
+                {
+                    return NotFound(new Response
+                    {
+                        Status = "Error",
+                        Message = "Course not found."
+                    });
+                }
+
+                var enrollment = new Enrollment
+                {
+                    CourseId = courseId,
+                    AccId = userId,
+                    TotalHour = 0
+                };
+
+                // todo: add enrollment validation
+                _dataContext.Enrollments.Add(enrollment);
+                _dataContext.SaveChanges();
+
+                return Ok($"User {user.UserName} has enrolled course {course.CourseName}.");
             }
-            catch (Exception)
+            catch (ValidationException ex)
             {
-                throw;
+                return BadRequest(new Response
+                {
+                    Status = "Error",
+                    Message = $"{ex.Message}"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response
+                {
+                    Status = "Error",
+                    Message = $"There was an error when enrolling course. Error: {ex.Message}"
+                });
             }
         }
 

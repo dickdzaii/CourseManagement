@@ -18,6 +18,9 @@ namespace CourseManagement.Models
 		public virtual DbSet<Role> Roles { get; set; }
 		public virtual DbSet<UserRole> UserRoles { get; set; }
 		public virtual DbSet<Course> Courses { get; set; }
+		public virtual DbSet<CourseMaterial> CourseMaterials { get; set; }
+		public virtual DbSet<Enrollment> Enrollments { get; set; }
+		public virtual DbSet<Feedback> Feedbacks { get; set; }
 
 		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		{
@@ -49,6 +52,21 @@ namespace CourseManagement.Models
 			{
 				entity.ToTable("Course");
 			});
-		}
+
+            modelBuilder.Entity<CourseMaterial>(entity =>
+            {
+                entity.ToTable("CourseMaterial");
+            });
+
+            modelBuilder.Entity<Enrollment>(entity =>
+            {
+                entity.ToTable("Enrollment");
+            });
+
+            modelBuilder.Entity<Feedback>(entity =>
+            {
+                entity.ToTable("Feedback");
+            });
+        }
 	}
 }

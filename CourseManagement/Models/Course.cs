@@ -8,6 +8,7 @@ namespace CourseManagement.Models
 		public int CourseId { get; set; }
         [Required]
         public int AccId  { get; set; }
+        public User Mentor { get; set; }
         [Required]
         public string CourseName { get; set; }
 		public string? Image { get; set; }
@@ -17,5 +18,14 @@ namespace CourseManagement.Models
         public bool Status { get; set; }
 		public DateTime CreatedDate { get; set; }
 		public int EnrollmentCount { get; set; }
-	}
+        public ICollection<Enrollment> Enrollments { get; set; }
+        public ICollection<CourseMaterial> CourseMaterials { get; set; }
+
+        public Course()
+        {
+            Enrollments = new List<Enrollment>();
+            CourseMaterials = new List<CourseMaterial>();
+        }
+    }
+
 }
