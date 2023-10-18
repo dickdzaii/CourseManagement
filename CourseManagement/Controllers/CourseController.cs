@@ -5,7 +5,6 @@ using System.Linq.Dynamic.Core;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using CourseManagement.Constants;
-using Microsoft.AspNetCore.Http;
 
 namespace CourseManagement.Controllers
 {
@@ -14,6 +13,7 @@ namespace CourseManagement.Controllers
     public class CourseController : ControllerBase
     {
         private readonly DataContext _dataContext;
+        private readonly string CourseBasePath = "D:\\Images\\Courses";
 
         public CourseController(DataContext _dataContext)
         {
@@ -139,7 +139,22 @@ namespace CourseManagement.Controllers
 
                 if (courseImage.Length > 0)
                 {
-                    var filePath = Path.GetTempFileName();
+                    if (!string.IsNullOrWhiteSpace(course.Image))
+                    {
+                        var oldImagePath = $"{CourseBasePath}\\{course.Image}";
+
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+
+                    if (!Directory.Exists(CourseBasePath))
+                    {
+                        System.IO.Directory.CreateDirectory(CourseBasePath);
+                    }
+
+                    var filePath = $"{CourseBasePath}\\{courseImage.FileName}";
                     using (var stream = System.IO.File.Create(filePath))
                     {
                         await courseImage.CopyToAsync(stream);
@@ -188,11 +203,16 @@ namespace CourseManagement.Controllers
                     });
                 }
 
+                if (!Directory.Exists($"{CourseBasePath}\\CourseMaterials\\{course.CourseName}"))
+                {
+                    Directory.CreateDirectory($"{CourseBasePath}\\CourseMaterials\\{course.CourseName}");
+                }
+
                 foreach (var file in files)
                 {
                     if (file.Length > 0)
                     {
-                        var filePath = Path.GetTempFileName();
+                        var filePath = $"{CourseBasePath}\\CourseMaterials\\{course.CourseName}\\{file.FileName}";
                         using (var stream = System.IO.File.Create(filePath))
                         {
                             await file.CopyToAsync(stream);
@@ -205,12 +225,10 @@ namespace CourseManagement.Controllers
                             IsActive = true,
                             MaterialTitle = "",
                             FileOrder = 1,
-                            ContentType = file.ContentType,
+                            ContentType = file.ContentType
                         };
 
                         _dataContext.CourseMaterials.Add(material);
-
-
                     }
                 }
 
@@ -222,12 +240,12 @@ namespace CourseManagement.Controllers
                     Message = $"Uploaded marterials for course {course.CourseName}."
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new Response
                 {
                     Status = "Error",
-                    Message = "There was an error when adding course materials."
+                    Message = $"There was an error when adding course materials. Error: {ex.Message}"
                 });
             }
         }

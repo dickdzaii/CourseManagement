@@ -46,26 +46,40 @@ namespace CourseManagement.Models
 			modelBuilder.Entity<UserRole>(entity =>
 			{
 				entity.ToTable("UserRole");
-			});
+                entity.HasOne(d => d.User).WithMany(p => p.UserRoles)
+                .HasForeignKey(d => d.UserId);
+                entity.HasOne(d => d.Role).WithMany(p => p.UserRoles)
+                .HasForeignKey(d => d.RoleId);
+            });
 
 			modelBuilder.Entity<Course>(entity =>
 			{
 				entity.ToTable("Course");
-			});
+				entity.HasOne(d => d.Mentor).WithMany(p => p.Mentors)
+				.HasForeignKey(d => d.AccId);
+            });
 
             modelBuilder.Entity<CourseMaterial>(entity =>
             {
                 entity.ToTable("CourseMaterial");
+                entity.HasOne(d => d.Course).WithMany(p => p.CourseMaterials)
+                .HasForeignKey(d => d.CourseId);
             });
 
             modelBuilder.Entity<Enrollment>(entity =>
             {
                 entity.ToTable("Enrollment");
+                entity.HasOne(d => d.Course).WithMany(p => p.Enrollments)
+                .HasForeignKey(d => d.CourseId);
+                entity.HasOne(d => d.Customer).WithMany(p => p.Customers)
+                .HasForeignKey(d => d.AccId);
             });
 
             modelBuilder.Entity<Feedback>(entity =>
             {
                 entity.ToTable("Feedback");
+                entity.HasOne(d => d.Enrollment).WithMany(p => p.Feedbacks)
+                .HasForeignKey(d => d.EnrollmentId);
             });
         }
 	}
