@@ -21,6 +21,7 @@ namespace CourseManagement.Models
 		public virtual DbSet<CourseMaterial> CourseMaterials { get; set; }
 		public virtual DbSet<Enrollment> Enrollments { get; set; }
 		public virtual DbSet<Feedback> Feedbacks { get; set; }
+		public virtual DbSet<CoursePayment> CoursePayments { get; set; }
 
 		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		{
@@ -80,6 +81,15 @@ namespace CourseManagement.Models
                 entity.ToTable("Feedback");
                 entity.HasOne(d => d.Enrollment).WithMany(p => p.Feedbacks)
                 .HasForeignKey(d => d.EnrollmentId);
+            });
+
+            modelBuilder.Entity<CoursePayment>(entity =>
+            {
+                entity.ToTable("CoursePayment");
+                entity.HasOne(d => d.Course).WithMany(p => p.CoursePayments)
+                .HasForeignKey(d => d.CourseId);
+                entity.HasOne(d => d.Customer).WithMany(p => p.CustomerPayments)
+                .HasForeignKey(d => d.AccId);
             });
         }
 	}

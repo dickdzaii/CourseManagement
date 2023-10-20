@@ -6,8 +6,8 @@ namespace CourseManagement.Models
     {
         public int CourseMaterialId { get; set; }
         [Required]
-        public string MaterialTitle { get; set; }
-        public string MaterialDescription { get; set; }
+        public string? MaterialTitle { get; set; }
+        public string? MaterialDescription { get; set; }
         [Required]
         public string FilePath { get; set; }
         [Required]

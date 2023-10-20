@@ -5,6 +5,7 @@ using System.Linq.Dynamic.Core;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using CourseManagement.Constants;
+using CourseManagement.Models.DataTransferObject;
 
 namespace CourseManagement.Controllers
 {
@@ -59,7 +60,20 @@ namespace CourseManagement.Controllers
         {
             var course = _dataContext.Courses.FirstOrDefault(c => c.CourseId == id);
 
-            return course != null ? Ok(course) : NotFound(new Response { Status = "Error", Message = "Could not find the course." });
+            if (course == null)
+            {
+                return NotFound(new Response { Status = "Error", Message = "Could not find the course." });
+            }
+
+            var mentor = _dataContext.Users.FirstOrDefault(u => u.UserId == course.AccId);
+            if (mentor is null)
+            {
+                return NotFound(new Response { Status = "Error", Message = "Could not find mentor." });
+            }
+
+            course.Mentor = mentor;
+
+            return Ok(course);
         }
 
         [HttpPost]
@@ -93,6 +107,14 @@ namespace CourseManagement.Controllers
             try
             {
                 var currentCourse = _dataContext.Courses.FirstOrDefault(c => c.CourseId == course.CourseId);
+                if (currentCourse == null)
+                {
+                    return NotFound(new Response
+                    {
+                        Status = "Error",
+                        Message = $"Course with id {course.CourseId} is not existed."
+                    });
+                }
                 _dataContext.Courses.Entry(currentCourse).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
 
                 _dataContext.ValidateUpsert(course, currentCourse);
@@ -167,7 +189,8 @@ namespace CourseManagement.Controllers
                     return Ok(new Response
                     {
                         Status = "Success",
-                        Message = $"Uploaded image for course {course.CourseName}."
+                        Message = $"Uploaded image for course {course.CourseName}.",
+                        Object = course
                     });
                 }
 
@@ -188,8 +211,8 @@ namespace CourseManagement.Controllers
             }
         }
 
-        [HttpPost("upload-material/{courseId}")]
-        public async Task<IActionResult> UploadCourseMaterial(IEnumerable<IFormFile> files, int courseId)
+        [HttpPost("materials/{courseId}")]
+        public async Task<IActionResult> UploadCourseMaterials(IEnumerable<IFormFile> files, int courseId)
         {
             try
             {
@@ -203,16 +226,16 @@ namespace CourseManagement.Controllers
                     });
                 }
 
-                if (!Directory.Exists($"{CourseBasePath}\\CourseMaterials\\{course.CourseName}"))
+                if (!Directory.Exists($"{CourseBasePath}\\CourseMaterials\\{course.CourseId}"))
                 {
-                    Directory.CreateDirectory($"{CourseBasePath}\\CourseMaterials\\{course.CourseName}");
+                    Directory.CreateDirectory($"{CourseBasePath}\\CourseMaterials\\{course.CourseId}");
                 }
 
                 foreach (var file in files)
                 {
                     if (file.Length > 0)
                     {
-                        var filePath = $"{CourseBasePath}\\CourseMaterials\\{course.CourseName}\\{file.FileName}";
+                        var filePath = $"{CourseBasePath}\\CourseMaterials\\{course.CourseId}\\{file.FileName}";
                         using (var stream = System.IO.File.Create(filePath))
                         {
                             await file.CopyToAsync(stream);
@@ -250,6 +273,50 @@ namespace CourseManagement.Controllers
             }
         }
 
+        [HttpGet]
+        [Route("materials/{courseId}")]
+        public IActionResult GetCourseMaterials(int courseId)
+        {
+            try
+            {
+                var course = _dataContext.Courses.FirstOrDefault(c => c.CourseId == courseId);
+                if (course is null)
+                {
+                    return NotFound(new Response
+                    {
+                        Status = "Error",
+                        Message = $"Course with id {courseId} is not existed."
+                    });
+                }
+
+                var materials = _dataContext.CourseMaterials.Where(m => m.CourseId == courseId);
+                var materialsView = materials.Select(x => new CourseMaterialViewModel
+                {
+                    CourseMaterialId = x.CourseMaterialId,
+                    MaterialTitle = x.MaterialTitle,
+                    MaterialDescription = x.MaterialDescription,
+                    FilePath = x.FilePath,
+                    ContentType = x.ContentType,
+                    FileOrder = x.FileOrder,
+                    IsActive = x.IsActive,
+                    CreatedDate = x.CreatedDate,
+                    CourseId = x.CourseId,
+                    Course = course,
+                    FullPath = $"{CourseBasePath}\\{x.FilePath}",
+                });
+
+                return Ok(materialsView);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response
+                {
+                    Status = "Error",
+                    Message = $"There was an error when getting course's materials. Error {ex.Message}."
+                });
+            }
+        }
+
         [HttpDelete]
         [Route("{courseId}")]
         public IActionResult DeleteCourse(int courseId)
@@ -257,24 +324,110 @@ namespace CourseManagement.Controllers
             try
             {
                 var course = _dataContext.Courses.FirstOrDefault(c => c.CourseId == courseId);
-                if (course != null)
+                if (course == null)
                 {
-                    _dataContext.ValidateDelete(course);
-                    _dataContext.Courses.Remove(course);
-
-                    _dataContext.SaveChanges();
+                    return NotFound(new Response
+                    {
+                        Status = "Error",
+                        Message = $"Course with id {courseId} is not existed."
+                    });
                 }
+
+                _dataContext.ValidateDelete(course);
+                _dataContext.Courses.Remove(course);
+
+                _dataContext.SaveChanges();
 
                 return Ok();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new Response
                 {
                     Status = "Error",
-                    Message = "There was an error when deleting course."
+                    Message = $"There was an error when deleting course. Error {ex.Message}."
                 });
             }
+        }
+
+        [HttpPost]
+        [Route("payment/{courseId}")]
+        public IActionResult Payment(PaymentModel paymentModel, int courseId)
+        {
+            try
+            {
+                var course = _dataContext.Courses.FirstOrDefault(c => c.CourseId == courseId);
+                var user = _dataContext.Users.FirstOrDefault(c => c.UserId == paymentModel.UserId);
+                if (course == null)
+                {
+                    return NotFound(new Response
+                    {
+                        Status = "Error",
+                        Message = $"Course with id {courseId} is not existed."
+                    });
+                }
+
+                if (user is null)
+                {
+                    return NotFound(new Response
+                    {
+                        Status = "Error",
+                        Message = $"User with id {paymentModel.UserId} is not existed."
+                    });
+                }
+
+                if (_dataContext.CoursePayments.Any(p => p.CourseId == course.CourseId && p.AccId == user.UserId))
+                {
+                    return BadRequest(new Response
+                    {
+                        Status = "Error",
+                        Message = $"User {user.UserName} has already pay for this course."
+                    });
+                }
+
+                var validTos = paymentModel.ValidTo.Split('/').Select(x => int.Parse(x));
+                var validToDate = new DateTime(validTos.Last(), validTos.First(), 1, 0, 0, 0);
+                // compare the current date time with the last day of the month in valid to 
+                if (validToDate.AddMonths(1).AddSeconds(-1) <= DateTime.Now)
+                {
+                    return BadRequest(new Response
+                    {
+                        Status = "Error",
+                        Message = $"The card's valid date is in the past."
+                    });
+                }
+
+                var payment = new CoursePayment
+                {
+                    CourseId = courseId,
+                    AccId = user.UserId,
+                    PaymentDate = DateTime.Now
+                };
+
+                _dataContext.CoursePayments.Add(payment);
+                _dataContext.SaveChanges();
+
+                return Ok(payment);
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new Response
+                {
+                    Status = "Error",
+                    Message = $"{ex.Message}"
+                });
+
+            }
+            catch (Exception ex)
+            {
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response
+                {
+                    Status = "Error",
+                    Message = $"There was an error when paying course. Error: {ex.Message}."
+                });
+            }
+
         }
 
         [HttpPost]
@@ -311,10 +464,11 @@ namespace CourseManagement.Controllers
                 };
 
                 // todo: add enrollment validation
+                _dataContext.ValidateUpsert(enrollment);
                 _dataContext.Enrollments.Add(enrollment);
                 _dataContext.SaveChanges();
 
-                return Ok($"User {user.UserName} has enrolled course {course.CourseName}.");
+                return Ok($"User {user.UserName} has succeeded enrolled course {course.CourseName}.");
             }
             catch (ValidationException ex)
             {
@@ -332,13 +486,6 @@ namespace CourseManagement.Controllers
                     Message = $"There was an error when enrolling course. Error: {ex.Message}"
                 });
             }
-        }
-
-        [HttpPost]
-        [Route("payment")]
-        public IActionResult Payment()
-        {
-            return Ok();
         }
     }
 }

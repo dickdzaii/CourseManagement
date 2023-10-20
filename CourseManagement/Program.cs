@@ -1,3 +1,4 @@
+using CourseManagement.Middlewares;
 using CourseManagement.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+//app.UseMiddleware<CourseMiddleware>();
+
 
 app.UseHttpsRedirection();
 

@@ -18,9 +18,20 @@ namespace CourseManagement.Common
                 throw new ValidationException($"A course named {destination.CourseName} already existed.");
             }
 
-            if (destination.Fee <= 0)
+            var mentorExists = context.Users.Any(u => u.UserId == destination.AccId);
+            if (!mentorExists)
             {
-                throw new ValidationException($"Course's fee must be greater than 0.");
+                throw new ValidationException($"Mentor with id {destination.AccId} not found.");
+            }
+
+            if (destination.Fee < 0)
+            {
+                throw new ValidationException($"Course's fee must be greater or equal 0.");
+            }
+
+            if (destination.EnrollmentCount <= 0)
+            {
+                throw new ValidationException($"Course must allow at least one enrollment.");
             }
         }
 

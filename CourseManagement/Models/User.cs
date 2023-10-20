@@ -14,5 +14,6 @@ namespace CourseManagement.Models
 		public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 		public virtual ICollection<Course> Mentors { get; set; } = new List<Course>();
 		public virtual ICollection<Enrollment> Customers { get; set; } = new List<Enrollment>();
+		public virtual ICollection<CoursePayment> CustomerPayments { get; set; } = new List<CoursePayment>();
 	}
 }

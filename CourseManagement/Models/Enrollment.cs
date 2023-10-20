@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using CourseManagement.Constants;
+using System.ComponentModel.DataAnnotations;
 
 namespace CourseManagement.Models
 {
@@ -12,9 +13,10 @@ namespace CourseManagement.Models
         public int AccId { get; set; }
         public User Customer { get; set; }
         public DateTime EnrollmentDate { get; set; } = DateTime.Now;
-        public double Score { get; set; }
-        public double TotalHour { get; set; }
-        public bool Passed { get; set; }
+        public EnrollmentState EnrollmentState { get; set; }
+        public double? Score { get; set; }
+        public double? TotalHour { get; set; }
+        public bool? Passed { get; set; }
         public ICollection<Feedback> Feedbacks { get; set; }
     }
 }

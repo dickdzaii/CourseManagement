@@ -20,11 +20,13 @@ namespace CourseManagement.Models
 		public int EnrollmentCount { get; set; }
         public ICollection<Enrollment> Enrollments { get; set; }
         public ICollection<CourseMaterial> CourseMaterials { get; set; }
+        public ICollection<CoursePayment> CoursePayments { get; set; }
 
         public Course()
         {
             Enrollments = new List<Enrollment>();
             CourseMaterials = new List<CourseMaterial>();
+            CoursePayments = new List<CoursePayment>();
         }
     }
 

@@ -1,5 +1,6 @@
 ﻿using CourseManagement.Common.Helper;
 using CourseManagement.Models;
+using CourseManagement.Models.DataTransferObject;
 using CourseManagement.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
