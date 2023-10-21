@@ -94,7 +94,7 @@ namespace CourseManagement.Controllers
                     Fee = course.Fee,
                     Status = course.Status.HasValue ? course.Status.Value : true,
                     Image = course.Image,
-                    EnrollmentCount = course.EnrollmentCount ?? 1,
+                    EnrollmentCount = course.EnrollmentCount == null ? 1 : course.EnrollmentCount.Value,
                 };
 
                 _dataContext.ValidateUpsert(newCourse);
