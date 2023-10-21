@@ -1,4 +1,3 @@
-using CourseManagement.Middlewares;
 using CourseManagement.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;

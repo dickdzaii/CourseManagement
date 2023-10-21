@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -154,7 +153,7 @@ namespace CourseManagement.Controllers
                     {
                         UserId = u.UserId,
                         UserName = u.UserName,
-                        Email = u.Email,
+                        Email = u.Email
                     }));
                 }
                 else
@@ -166,6 +165,25 @@ namespace CourseManagement.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = $"Error when getting users. Error {ex.Message}" });
             }
+        }
+
+        [HttpGet("userId")]
+        public IActionResult GetUser(int userId)
+        {
+            var user = _dataContext.Users.FirstOrDefault(u => u.UserId == userId);
+            if (user == null)
+            {
+                return NotFound($"User with id {userId} does not exist");
+            }
+
+            var userView = new UserViewModel
+            {
+                UserId = user.UserId,
+                UserName = user.UserName,
+                Email = user.Email
+            };
+
+            return Ok(userView);
         }
     }
 }

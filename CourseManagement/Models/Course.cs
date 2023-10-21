@@ -1,11 +1,9 @@
 ﻿using CourseManagement.Models.ViewModels;
-using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CourseManagement.Models
 {
-	public class Course
+    public class Course
 	{
 		public int CourseId { get; set; }
         [Required]

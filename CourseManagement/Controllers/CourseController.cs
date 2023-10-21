@@ -463,16 +463,16 @@ namespace CourseManagement.Controllers
             try
             {
                 var payments = _dataContext.CoursePayments.Where(p => (courseId == null || p.CourseId == courseId) && (userId == null || p.AccId == userId));
-                foreach (var payment in payments)
-                {
-                    var mentor = _dataContext.Users.FirstOrDefault(u => u.UserId == userId);
-                    payment.CustomerView = new()
-                    {
-                        Email = mentor.Email,
-                        UserId = mentor.UserId,
-                        UserName = mentor.UserName,
-                    };
-                }
+                //foreach (var payment in payments)
+                //{
+                //    var customer = _dataContext.Users.FirstOrDefault(u => u.UserId == payment.AccId);
+                //    payment.CustomerView = new()
+                //    {
+                //        Email = customer.Email,
+                //        UserId = customer.UserId,
+                //        UserName = customer.UserName,
+                //    };
+                //}
 
                 return payments.Any() ? Ok(payments) : NotFound("No course's payment found.");
             }
@@ -518,7 +518,8 @@ namespace CourseManagement.Controllers
                 {
                     CourseId = courseId,
                     AccId = userId,
-                    TotalHour = 0
+                    TotalHour = 0,
+                    EnrollmentState = EnrollmentState.InProgress
                 };
 
                 // todo: add enrollment validation
@@ -544,6 +545,59 @@ namespace CourseManagement.Controllers
                     Message = $"There was an error when enrolling course. Error: {ex.Message}"
                 });
             }
+        }
+
+        [HttpGet]
+        [Route("enrollments")]
+        public IActionResult GetEnrollments(int? courseId, int? userId)
+        {
+            var enrollments = _dataContext.Enrollments.Where(p => (courseId == null || p.CourseId == courseId) && (userId == null || p.AccId == userId));
+            if (!enrollments.Any())
+            {
+                return NotFound("Enrollment not found.");
+            }
+
+            return Ok(enrollments);
+        }
+
+        [HttpGet]
+        [Route("enrollments/{enrollmentId}")]
+        public IActionResult GetEnrollmentById(int enrollmentId)
+        {
+            var enrollment = _dataContext.Enrollments.FirstOrDefault(e => e.EnrollmentId == enrollmentId);
+            if (enrollment == null)
+            {
+                return NotFound($"Enrollment with Id {enrollmentId} not found.");
+            }
+
+            var course = _dataContext.Courses.FirstOrDefault(c => c.CourseId == enrollment.CourseId);
+            if (course is null)
+            {
+                return NotFound("Could not find the course of this enrollment.");
+            }
+
+            var customer = _dataContext.Users.FirstOrDefault(u => u.UserId == enrollment.AccId);
+            if (customer is null)
+            {
+                return NotFound("Could not find the customer of this enrollment.");
+            }
+
+            var enrollmentView = new EnrollmentViewModel
+            {
+                EnrollmentId = enrollment.EnrollmentId,
+                AccId = enrollment.AccId,
+                CourseId = enrollment.CourseId,
+                EnrollmentDate = enrollment.EnrollmentDate,
+                EnrollmentState = enrollment.EnrollmentState,
+                Passed = enrollment.Passed,
+                Score = enrollment.Score,
+                TotalHour = enrollment.TotalHour,
+                CourseName = course.CourseName,
+                CustomerEmail = customer.Email,
+                CustomerName = customer.UserName
+            };
+
+            return Ok(enrollmentView);
         }
     }
 }
