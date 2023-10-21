@@ -71,7 +71,12 @@ namespace CourseManagement.Controllers
                 return NotFound(new Response { Status = "Error", Message = "Could not find mentor." });
             }
 
-            course.Mentor = mentor;
+            course.MentorView = new()
+            {
+                Email = mentor.Email,
+                UserId = mentor.UserId,
+                UserName = mentor.UserName,
+            };
 
             return Ok(course);
         }
@@ -403,7 +408,7 @@ namespace CourseManagement.Controllers
                     return BadRequest(new Response
                     {
                         Status = "Error",
-                        Message = $"User {user.UserName} has already pay for this course."
+                        Message = $"User {user.UserName} has already paied for this course."
                     });
                 }
 
@@ -447,6 +452,37 @@ namespace CourseManagement.Controllers
                 {
                     Status = "Error",
                     Message = $"There was an error when paying course. Error: {ex.Message}."
+                });
+            }
+        }
+
+        [HttpGet]
+        [Route("payment")]
+        public IActionResult GetPayment(int? courseId, int? userId)
+        {
+            try
+            {
+                var payments = _dataContext.CoursePayments.Where(p => (courseId == null || p.CourseId == courseId) && (userId == null || p.AccId == userId));
+                foreach (var payment in payments)
+                {
+                    var mentor = _dataContext.Users.FirstOrDefault(u => u.UserId == userId);
+                    course.MentorView = new()
+                    {
+                        Email = mentor.Email,
+                        UserId = mentor.UserId,
+                        UserName = mentor.UserName,
+                    };
+                }
+
+                return payments.Any() ? Ok(payments) : NotFound("No course's payment found.");
+            }
+            catch (Exception ex)
+            {
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response
+                {
+                    Status = "Error",
+                    Message = $"There was an error when getting course's payment. Error: {ex.Message}."
                 });
             }
 

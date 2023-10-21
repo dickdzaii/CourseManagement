@@ -1,4 +1,5 @@
-﻿using System.Reflection.Metadata;
+﻿using CourseManagement.Models.ViewModels;
+using System.Reflection.Metadata;
 
 namespace CourseManagement.Models
 {
@@ -8,6 +9,8 @@ namespace CourseManagement.Models
 		public int UserId { get; set; }
 		public int RoleId { get; set; }
 		public User User { get; set; }
+		public UserViewModel UserView { get; set; }
+
 		public Role Role { get; set; }
 	}
 }

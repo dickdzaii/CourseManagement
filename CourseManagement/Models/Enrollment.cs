@@ -1,4 +1,5 @@
 ﻿using CourseManagement.Constants;
+using CourseManagement.Models.ViewModels;
 using System.ComponentModel.DataAnnotations;
 
 namespace CourseManagement.Models
@@ -12,6 +13,7 @@ namespace CourseManagement.Models
         [Required]
         public int AccId { get; set; }
         public User Customer { get; set; }
+        public UserViewModel CustomerView { get; set; }
         public DateTime EnrollmentDate { get; set; } = DateTime.Now;
         public EnrollmentState EnrollmentState { get; set; }
         public double? Score { get; set; }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CourseManagement.Models.ViewModels;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -10,6 +11,7 @@ namespace CourseManagement.Models
         [Required]
         public int AccId  { get; set; }
         public User Mentor { get; set; }
+        public UserViewModel MentorView { get; set; }
         [Required]
         public string CourseName { get; set; }
 		public string? Image { get; set; }

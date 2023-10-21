@@ -36,7 +36,7 @@ namespace CourseManagement.Common
             }
 
             // nếu user chưa pay khóa học
-            var payment = context.CoursePayments.FirstOrDefault(p => p.CourseId == destination.CourseId);
+            var payment = context.CoursePayments.FirstOrDefault(p => p.CourseId == destination.CourseId && p.AccId == destination.AccId);
             if (payment == null)
             {
                 throw new ValidationException($"User {customer.UserName} did not pay this course.");
