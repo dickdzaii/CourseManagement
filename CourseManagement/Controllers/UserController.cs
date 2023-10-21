@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -91,7 +92,7 @@ namespace CourseManagement.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = $"User creation failed! Please check user details and try again. Error: { ex.Message }" });
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = $"User creation failed! Please check user details and try again. Error: {ex.Message}" });
             }
         }
 
@@ -118,7 +119,7 @@ namespace CourseManagement.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = $"User creation failed! Please check user details and try again. Error { ex.Message }" });
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = $"User creation failed! Please check user details and try again. Error {ex.Message}" });
             }
         }
 
@@ -135,7 +136,23 @@ namespace CourseManagement.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = $"User edition failed! Please check user details and try again. Error { ex.Message }" });
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = $"User edition failed! Please check user details and try again. Error {ex.Message}" });
+            }
+        }
+
+        [HttpGet]
+        public IActionResult GetUsers(string? search = null)
+        {
+            try
+            {
+                var users = _dataContext.Users.Where(user =>
+                    string.IsNullOrWhiteSpace(search) || user.UserName.ToLower().Contains(search.ToLower().Trim()) || user.Email.ToLower().Contains(search.ToLower().Trim())
+                    );
+                return users.Any() ? Ok(users) : NotFound("No users found.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = $"Error when getting users. Error {ex.Message}" });
             }
         }
     }

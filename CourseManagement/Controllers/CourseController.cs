@@ -77,17 +77,26 @@ namespace CourseManagement.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateCourse(Course course)
+        public IActionResult CreateCourse(CourseDto course)
         {
             try
             {
-                course.CourseId = 0;
-                course.CourseName = course.CourseName.Trim();
-                _dataContext.ValidateUpsert(course);
-                _dataContext.Courses.Add(course);
+                var newCourse = new Course
+                {
+                    AccId = course.AccId,
+                    CourseName = course.CourseName.Trim(),
+                    CreatedDate = DateTime.Now,
+                    Fee = course.Fee,
+                    Status = course.Status.HasValue ? course.Status.Value : true,
+                    Image = course.Image,
+                    EnrollmentCount = course.EnrollmentCount ?? 1,
+                };
+
+                _dataContext.ValidateUpsert(newCourse);
+                _dataContext.Courses.Add(newCourse);
                 _dataContext.SaveChanges();
 
-                return Ok(course);
+                return Ok(newCourse);
             }
             catch (ValidationException ex)
             {
@@ -101,28 +110,41 @@ namespace CourseManagement.Controllers
         }
 
         [HttpPut]
-        [Route("{id}")]
-        public IActionResult UpdateCourse(Course course)
+        [Route("{courseId}")]
+        public IActionResult UpdateCourse(CourseDto course, int courseId)
         {
             try
             {
-                var currentCourse = _dataContext.Courses.FirstOrDefault(c => c.CourseId == course.CourseId);
+                var currentCourse = _dataContext.Courses.FirstOrDefault(c => c.CourseId == courseId);
                 if (currentCourse == null)
                 {
                     return NotFound(new Response
                     {
                         Status = "Error",
-                        Message = $"Course with id {course.CourseId} is not existed."
+                        Message = $"Course with id {courseId} is not existed."
                     });
                 }
                 _dataContext.Courses.Entry(currentCourse).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
 
-                _dataContext.ValidateUpsert(course, currentCourse);
+                var updatedCourse = new Course
+                {
+                    CourseId = courseId,
+                    AccId = course.AccId,
+                    CourseName = course.CourseName.Trim(),
+                    Fee = course.Fee,
+                    Status = course.Status.HasValue ? course.Status.Value : true,
+                    Image = course.Image,
+                    EnrollmentCount = course.EnrollmentCount ?? 1,
+                    CreatedDate = currentCourse.CreatedDate
+                };
+
+
+                _dataContext.ValidateUpsert(updatedCourse, currentCourse);
                 course.CourseName = course.CourseName.Trim();
-                _dataContext.Courses.Update(course);
+                _dataContext.Courses.Update(updatedCourse);
                 _dataContext.SaveChanges();
 
-                return Ok(course);
+                return Ok(updatedCourse);
             }
             catch (ValidationException ex)
             {
@@ -133,12 +155,12 @@ namespace CourseManagement.Controllers
                 });
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new Response
                 {
                     Status = "Error",
-                    Message = "There was an error when modifying a course."
+                    Message = $"There was an error when modifying a course. Error: {ex.Message}"
                 });
             }
         }
