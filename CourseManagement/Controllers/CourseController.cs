@@ -466,7 +466,7 @@ namespace CourseManagement.Controllers
                 foreach (var payment in payments)
                 {
                     var mentor = _dataContext.Users.FirstOrDefault(u => u.UserId == userId);
-                    course.MentorView = new()
+                    payment.MentorView = new()
                     {
                         Email = mentor.Email,
                         UserId = mentor.UserId,
