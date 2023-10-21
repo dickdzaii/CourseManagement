@@ -1,7 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CourseManagement.Models.ViewModels
 {
+    [Keyless]
+    [NotMapped]
     public class UserViewModel
     {
         public int UserId { get; set; }
