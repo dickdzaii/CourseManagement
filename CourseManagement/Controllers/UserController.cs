@@ -148,7 +148,19 @@ namespace CourseManagement.Controllers
                 var users = _dataContext.Users.Where(user =>
                     string.IsNullOrWhiteSpace(search) || user.UserName.ToLower().Contains(search.ToLower().Trim()) || user.Email.ToLower().Contains(search.ToLower().Trim())
                     );
-                return users.Any() ? Ok(users) : NotFound("No users found.");
+                if (users.Any())
+                {
+                    return Ok(users.Select(u => new UserViewModel
+                    {
+                        UserId = u.UserId,
+                        UserName = u.UserName,
+                        Email = u.Email,
+                    }));
+                }
+                else
+                {
+                    return NotFound("No users found.");
+                }
             }
             catch (Exception ex)
             {
